@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>局域网文件传输 - 移动端</title>
+    <link rel="stylesheet" href="/static/mobile/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 汉堡菜单按钮 -->
+        <div class="menu-toggle" id="menuToggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        
+        <!-- 状态区 - 左侧1/4 -->
+        <div class="status-panel" id="statusPanel">
+            <div class="user-info">
+                <div class="user-avatar">👤</div>
+                <div class="user-name">当前用户</div>
+                <button class="refresh-btn" title="刷新状态">🔄</button>
+                <div class="user-status">在线</div>
+            </div>
+            
+            <div class="online-users">
+                <h4 style="margin-bottom: 15px; color: #bdc3c7;">在线用户</h4>
+                
+                <div class="online-user">
+                    <div class="user-avatar-small">A</div>
+                    <div class="user-name-small">Alice</div>
+                </div>
+                
+                <div class="online-user">
+                    <div class="user-avatar-small">B</div>
+                    <div class="user-name-small">Bob</div>
+                </div>
+                
+                <div class="online-user">
+                    <div class="user-avatar-small">C</div>
+                    <div class="user-name-small">Charlie</div>
+                </div>
+                
+                <div class="online-user">
+                    <div class="user-avatar-small">D</div>
+                    <div class="user-name-small">David</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 交互区 - 右侧3/4 -->
+        <div class="interaction-panel">
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <!-- 消息将动态添加在这里 -->
+                    <div class="message system-message">
+                        <div class="message-content">
+                            <div class="message-text">欢迎使用LAN文件传输系统！</div>
+                            <div class="message-time">刚刚</div>
+                        </div>
+                    </div>
+                    
+                    <div class="message received-message">
+                        <div class="message-avatar">A</div>
+                        <div class="message-content">
+                            <div class="message-sender">Alice</div>
+                            <div class="message-text">你好！需要发送什么文件？</div>
+                            <div class="message-time">2分钟前</div>
+                        </div>
+                    </div>
+                    
+                    <div class="message sent-message">
+                        <div class="message-content">
+                            <div class="message-text">我想发送一个文档文件</div>
+                            <div class="message-time">1分钟前</div>
+                        </div>
+                        <div class="message-avatar">我</div>
+                    </div>
+
+                    <div class="message file-message">
+                        <div class="message-avatar">A</div>
+                        <div class="message-content">
+                            <div class="message-sender">Alice</div>
+                            <div class="file-item">
+                                <div class="file-icon">📄</div>
+                                <div class="file-info">
+                                    <div class="file-name">项目文档.pdf</div>
+                                    <div class="file-size">2.4 MB</div>
+                                    <div class="file-progress">
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: 75%"></div>
+                                        </div>
+                                        <span class="progress-text">75%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="message-time">正在传输...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-area">
+                <input type="text" class="message-input" placeholder="输入消息...">
+                <button class="file-btn">+</button>
+                <button class="send-btn">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 这里将添加JavaScript交互逻辑
+        console.log("移动端界面已加载");
+        
+        // 加载用户信息
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/user-info');
+                if (response.ok) {
+                    const userData = await response.json();
+                    updateUserDisplay(userData);
+                    
+                    // 保存当前用户ID到sessionStorage
+                    sessionStorage.setItem('user_id', userData.user_id);
+                    sessionStorage.setItem('username', userData.username);
+                } else {
+                    console.warn('获取用户信息失败');
+                }
+            } catch (error) {
+                console.error('加载用户信息错误:', error);
+            }
+        }
+        
+        function updateUserDisplay(userData) {
+            const userNameElement = document.querySelector('.user-name');
+            const userAvatarElement = document.querySelector('.user-avatar');
+            
+            if (userNameElement && userData.username) {
+                userNameElement.textContent = userData.username;
+            }
+            
+            // 可以根据需要添加头像显示逻辑
+            if (userAvatarElement && userData.avatar) {
+                // 这里可以设置用户头像
+                userAvatarElement.textContent = '👤'; // 默认头像
+            }
+        }
+        
+        // 菜单切换功能
+        const menuToggle = document.getElementById('menuToggle');
+        const statusPanel = document.getElementById('statusPanel');
+        
+        menuToggle.addEventListener('click', function() {
+            statusPanel.classList.toggle('hidden');
+            this.classList.toggle('active');
+            
+            // 保存状态到localStorage
+            const isHidden = statusPanel.classList.contains('hidden');
+            localStorage.setItem('sidebarHidden', isHidden);
+        });
+        
+        // 初始化时检查保存的状态
+        const savedState = localStorage.getItem('sidebarHidden');
+        if (savedState === 'true') {
+            statusPanel.classList.add('hidden');
+            menuToggle.classList.add('active');
+        }
+        
+        // 页面加载完成后获取用户信息
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserInfo();
+            loadOnlineUsers();
+            startHeartbeat();
+            startMessagePolling();  // 启动消息轮询
+        });
+        
+        // 消息轮询 - 检查新消息
+        function startMessagePolling() {
+            setInterval(async () => {
+                const selectedUser = document.querySelector('.online-user.selected');
+                if (selectedUser && selectedUser.dataset.userId !== sessionStorage.getItem('user_id')) {
+                    await checkNewMessages(selectedUser.dataset.userId);
+                }
+            }, 3000); // 每3秒检查一次新消息
+        }
+        
+        // 检查新消息
+        async function checkNewMessages(targetId) {
+            try {
+                console.log('🔍 检查新消息，目标用户:', targetId);
+                
+                // 获取最后一条消息的时间戳
+                let lastTimestamp = await getLastMessageTimestamp(targetId);
+                console.log('⏰ 最后时间戳:', lastTimestamp);
+                
+                const url = lastTimestamp 
+                    ? `/api/check-new-messages/${targetId}?last_timestamp=${encodeURIComponent(lastTimestamp)}`
+                    : `/api/check-new-messages/${targetId}`;
+                
+                console.log('🌐 请求URL:', url);
+                
+                const response = await fetch(url);
+                if (response.ok) {
+                    const newMessages = await response.json();
+                    console.log('📨 收到新消息数量:', newMessages.length);
+                    
+                    if (newMessages.length > 0) {
+                        // 显示新消息
+                        newMessages.forEach(message => {
+                            console.log('💬 新消息:', message.content);
+                            if (message.type === 'text') {
+                                const isSent = message.sender_id.toString() === sessionStorage.getItem('user_id');
+                                addTextMessage(message.content, isSent, message.sender_id, message.timestamp);
+                            } else if (message.type === 'file') {
+                                const isSent = message.sender_id.toString() === sessionStorage.getItem('user_id');
+                                addReceivedFileMessage(message, isSent);
+                            }
+                        });
+                    }
+                } else {
+                    console.error('❌ API请求失败:', response.status);
+                }
+            } catch (error) {
+                console.error('❌ 检查新消息失败:', error);
+            }
+        }
+        
+        // 获取最后一条消息的时间戳
+        async function getLastMessageTimestamp(targetId) {
+            try {
+                const messages = await fetch(`/api/messages/${targetId}`).then(r => r.json());
+                if (messages.length > 0) {
+                    return messages[messages.length - 1].timestamp;
+                }
+            } catch (error) {
+                console.error('获取消息时间戳失败:', error);
+            }
+            return null;
+        }
+        
+        // 加载在线用户列表
+        async function loadOnlineUsers() {
+            try {
+                const response = await fetch('/api/online-users');
+                if (response.ok) {
+                    const users = await response.json();
+                    updateOnlineUsersDisplay(users);
+                }
+            } catch (error) {
+                console.error('加载在线用户失败:', error);
+            }
+        }
+        
+        function updateOnlineUsersDisplay(users) {
+            const onlineUsersContainer = document.querySelector('.online-users');
+            const currentUserId = sessionStorage.getItem('user_id');
+            
+            // 保存当前选中的用户ID
+            const selectedUserId = document.querySelector('.online-user.selected')?.dataset.userId;
+            
+            onlineUsersContainer.innerHTML = '<h4 style="margin-bottom: 15px; color: #bdc3c7;">在线用户</h4>';
+            
+            users.forEach(user => {
+                const userElement = document.createElement('div');
+                userElement.className = `online-user ${user.is_online ? 'online' : 'offline'}`;
+                userElement.dataset.userId = user.user_id;
+                
+                // 判断是否是当前设备
+                const displayName = (user.user_id.toString() === currentUserId) ? '本设备' : user.username;
+                const avatarChar = (user.user_id.toString() === currentUserId) ? '本' : user.username.charAt(0);
+                
+                userElement.innerHTML = `
+                    <div class="user-avatar-small">${avatarChar}</div>
+                    <div class="user-name-small">${displayName}</div>
+                `;
+                onlineUsersContainer.appendChild(userElement);
+            });
+            
+            // 恢复之前的选择状态
+            if (selectedUserId) {
+                const userElement = document.querySelector(`[data-user-id="${selectedUserId}"]`);
+                if (userElement) {
+                    userElement.classList.add('selected');
+                }
+            }
+            
+            // 添加用户点击事件监听
+            attachUserClickEvents();
+        }
+        
+        // 添加用户点击事件处理
+        function attachUserClickEvents() {
+            const onlineUsers = document.querySelectorAll('.online-user');
+            onlineUsers.forEach(userElement => {
+                userElement.addEventListener('click', function() {
+                    handleUserSelection(this);
+                });
+            });
+        }
+        
+        // 处理用户选择
+        function handleUserSelection(userElement) {
+            const currentUserId = sessionStorage.getItem('user_id');
+            const selectedUserId = userElement.dataset.userId;
+            
+            // 清除之前的选择
+            document.querySelectorAll('.online-user.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // 高亮当前选择
+            userElement.classList.add('selected');
+            
+            // 检查是否是选择自己
+            if (selectedUserId === currentUserId) {
+                showSelfMessageWarning();
+            } else {
+                // 正常选择其他用户
+                clearChatMessages();
+                loadChatHistory(selectedUserId);  // 加载与该用户的聊天记录
+            }
+        }
+        
+        // 显示自我消息警告
+        function showSelfMessageWarning() {
+            const chatMessages = document.getElementById('chatMessages');
+            
+            // 清空现有消息
+            chatMessages.innerHTML = '';
+            
+            // 添加警告消息
+            const warningMessage = document.createElement('div');
+            warningMessage.className = 'message system-message';
+            warningMessage.innerHTML = `
+                <div class="message-content">
+                    <div class="message-text">
+                        ⚠️ 会发送的服务器电脑，无用户接受
+                    </div>
+                    <div class="message-time">系统提示</div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(warningMessage);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // 更新输入区域提示
+            updateInputPlaceholder('消息将保存到服务器...');
+        }
+        
+        // 更新输入框提示
+        function updateInputPlaceholder(text) {
+            const messageInput = document.querySelector('.message-input');
+            messageInput.placeholder = text;
+        }
+        
+        // 清空聊天消息
+        function clearChatMessages() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = '';
+            
+            // 恢复默认输入提示
+            updateInputPlaceholder('输入消息...');
+        }
+        
+        // 加载聊天记录
+        async function loadChatHistory(targetId) {
+            try {
+                const response = await fetch(`/api/messages/${targetId}`);
+                if (response.ok) {
+                    const messages = await response.json();
+                    displayMessages(messages);
+                }
+            } catch (error) {
+                console.error('加载聊天记录失败:', error);
+            }
+        }
+        
+        // 显示消息列表
+        function displayMessages(messages) {
+            const chatMessages = document.getElementById('chatMessages');
+            const currentUserId = sessionStorage.getItem('user_id');
+            
+            messages.forEach(message => {
+                if (message.type === 'text') {
+                    // 文本消息
+                    const isSent = message.sender_id.toString() === currentUserId;
+                    addTextMessage(message.content, isSent, message.sender_id, message.timestamp);
+                } else if (message.type === 'file') {
+                    // 文件消息
+                    const isSent = message.sender_id.toString() === currentUserId;
+                    addReceivedFileMessage(message, isSent);
+                }
+            });
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // 添加接收到的文件消息
+        function addReceivedFileMessage(messageData, isSent = false) {
+            const chatMessages = document.getElementById('chatMessages');
+            
+            const fileMessage = document.createElement('div');
+            fileMessage.className = isSent ? 'message file-message' : 'message received-message file-message';
+            
+            const fileInfo = messageData.file_info;
+            const senderName = isSent ? '我' : `用户${messageData.sender_id}`;
+            
+            fileMessage.innerHTML = `
+                <div class="message-avatar">${isSent ? '📄' : '?'}</div>
+                <div class="message-content">
+                    <div class="message-sender">${senderName}</div>
+                    <div class="file-item">
+                        <div class="file-icon">${getFileIconByExtension(fileInfo.original_name)}</div>
+                        <div class="file-info">
+                            <div class="file-name">${fileInfo.original_name}</div>
+                            <div class="file-size">${formatFileSize(fileInfo.size)}</div>
+                            <button class="download-btn" onclick="downloadFile('${fileInfo.saved_name}', '${messageData.receiver_id}')">
+                                下载文件
+                            </button>
+                        </div>
+                    </div>
+                    <div class="message-time">${formatTime(messageData.timestamp)}</div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(fileMessage);
+            scrollToBottom();
+        }
+        
+        // 根据文件扩展名获取图标
+        function getFileIconByExtension(filename) {
+            const extension = filename.split('.').pop().toLowerCase();
+            const icons = {
+                'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️', 'bmp': '🖼️',
+                'pdf': '📄', 'doc': '📝', 'docx': '📝', 'txt': '📝',
+                'mp4': '🎬', 'avi': '🎬', 'mov': '🎬', 'wmv': '🎬',
+                'mp3': '🎵', 'wav': '🎵', 'flac': '🎵',
+                'zip': '📦', 'rar': '📦', '7z': '📦',
+                'default': '📁'
+            };
+            return icons[extension] || icons.default;
+        }
+        
+        // 格式化时间
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('zh-CN', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
+        
+        // 添加文本消息（增强版）
+        function addTextMessage(text, isSent = false, senderId = null, timestamp = null) {
+            const chatMessages = document.getElementById('chatMessages');
+            
+            const textMessage = document.createElement('div');
+            textMessage.className = isSent ? 'message sent-message' : 'message received-message';
+            
+            const senderName = isSent ? '我' : (senderId ? `用户${senderId}` : '对方');
+            const displayTime = timestamp ? formatTime(timestamp) : '刚刚';
+            
+            if (isSent) {
+                textMessage.innerHTML = `
+                    <div class="message-content">
+                        <div class="message-text">${text}</div>
+                        <div class="message-time">${displayTime}</div>
+                    </div>
+                    <div class="message-avatar">我</div>
+                `;
+            } else {
+                textMessage.innerHTML = `
+                    <div class="message-avatar">${senderId ? senderId.toString().charAt(0) : '?'}</div>
+                    <div class="message-content">
+                        <div class="message-sender">${senderName}</div>
+                        <div class="message-text">${text}</div>
+                        <div class="message-time">${displayTime}</div>
+                    </div>
+                `;
+            }
+            
+            chatMessages.appendChild(textMessage);
+            scrollToBottom();
+        }
+
+        // 自动滚动到底部（修正：滚动正确的容器）
+        function scrollToBottom() {
+            console.log('🔄 滚动函数被调用');
+            const chatContainer = document.querySelector('.chat-container');
+            
+            if (!chatContainer) {
+                console.error('❌ 找不到聊天容器元素');
+                return;
+            }
+            
+            console.log('📊 当前滚动位置:', chatContainer.scrollTop);
+            console.log('📊 最大滚动高度:', chatContainer.scrollHeight);
+            console.log('📊 客户端高度:', chatContainer.clientHeight);
+            console.log('📊 是否可以滚动:', chatContainer.scrollHeight > chatContainer.clientHeight);
+            
+            setTimeout(() => {
+                console.log('⬇️ 执行滚动操作');
+                
+                // 滚动正确的容器
+                const targetScrollTop = chatContainer.scrollHeight;
+                chatContainer.scrollTop = targetScrollTop;
+                
+                // 验证滚动结果
+                setTimeout(() => {
+                    console.log('🔍 验证滚动结果:', chatContainer.scrollTop, '/', targetScrollTop);
+                    console.log('🔍 滚动是否成功:', chatContainer.scrollTop === targetScrollTop);
+                    
+                    if (chatContainer.scrollTop !== targetScrollTop) {
+                        console.log('⚠️ 滚动失败，尝试备用方法');
+                        chatContainer.scrollTo({
+                            top: targetScrollTop,
+                            behavior: 'auto'
+                        });
+                    }
+                }, 50);
+            }, 100);
+        }
+        
+        // 滚动验证函数
+        function validateScroll() {
+            const chatMessages = document.getElementById('chatMessages');
+            console.log('🔍 滚动验证:');
+            console.log('scrollTop:', chatMessages.scrollTop);
+            console.log('scrollHeight:', chatMessages.scrollHeight);
+            console.log('clientHeight:', chatMessages.clientHeight);
+            console.log('是否可以滚动:', chatMessages.scrollHeight > chatMessages.clientHeight);
+            console.log('滚动位置百分比:', (chatMessages.scrollTop / (chatMessages.scrollHeight - chatMessages.clientHeight)) * 100 + '%');
+        }
+        
+        // 单独的状态更新函数
+        async function updateDeviceStatus() {
+            try {
+                const response = await fetch('/api/update-status', { method: 'POST' });
+                if (response.ok) {
+                    console.log('✓ 设备状态已更新');
+                    return true;
+                } else {
+                    console.warn('⚠ 状态更新失败');
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ 状态更新错误:', error);
+                return false;
+            }
+        }
+        
+        // 心跳检测 - 定期更新状态
+        function startHeartbeat() {
+            setInterval(async () => {
+                await updateDeviceStatus();  // 更新本设备状态
+                // 注意：这里不调用 loadOnlineUsers() 来避免频繁刷新选择状态
+            }, 60000); // 每分钟一次
+        }
+        
+        // 刷新按钮功能 - 立即发送心跳包并获取状态
+        const refreshBtn = document.querySelector('.refresh-btn');
+        refreshBtn.addEventListener('click', async function() {
+            this.classList.add('refreshing');
+            
+            try {
+                // 1. 立即发送心跳包更新当前设备状态
+                await updateDeviceStatus();
+                
+                // 2. 获取并显示所有设备的最新状态
+                await loadOnlineUsers();
+                
+            } catch (error) {
+                console.error('刷新失败:', error);
+            } finally {
+                setTimeout(() => this.classList.remove('refreshing'), 500);
+            }
+        });
+        
+        // 文件选择功能 - 移动端优化
+        const fileBtn = document.querySelector('.file-btn');
+        
+        // 创建隐藏的文件输入框
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.multiple = true;
+        fileInput.accept = '*/*';  // 接受所有文件类型
+        fileInput.style.display = 'none';
+        document.body.appendChild(fileInput);
+        
+        // 添加触摸反馈
+        fileBtn.addEventListener('touchstart', function() {
+            this.style.transform = 'scale(0.95)';
+        });
+        
+        fileBtn.addEventListener('touchend', function() {
+            this.style.transform = '';
+        });
+        
+        fileBtn.addEventListener('click', function() {
+            fileInput.click();  // 触发文件选择对话框
+        });
+        
+        // 文件选择处理
+        fileInput.addEventListener('change', async function(e) {
+            const files = Array.from(e.target.files);
+            
+            if (files.length === 0) return;
+            
+            // 显示简单的加载提示
+            const originalText = fileBtn.textContent;
+            fileBtn.textContent = '上传中...';
+            fileBtn.disabled = true;
+            
+            for (const file of files) {
+                try {
+                    console.log('选择文件:', file.name, formatFileSize(file.size));
+                    await uploadFile(file);
+                } catch (error) {
+                    console.error('文件处理失败:', error);
+                    alert(`文件 ${file.name} 处理失败`);
+                }
+            }
+            
+            // 恢复按钮状态
+            fileBtn.textContent = originalText;
+            fileBtn.disabled = false;
+            
+            // 清空文件选择
+            fileInput.value = '';
+        });
+        
+        // 上传文件
+        async function uploadFile(file) {
+            const selectedUser = document.querySelector('.online-user.selected');
+            if (!selectedUser) {
+                alert('请先选择一个用户');
+                return;
+            }
+            
+            const targetId = selectedUser.dataset.userId;
+            
+            // 创建FormData对象
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('target_id', targetId);
+            
+            try {
+                const response = await fetch('/api/send-file', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('文件上传成功:', result);
+                    
+                    // 显示文件消息
+                    addFileMessage(file, result.message);
+                    
+                    // 如果是发送给自己，显示服务器保存提示
+                    const currentUserId = sessionStorage.getItem('user_id');
+                    if (targetId === currentUserId) {
+                        addSystemMessage('文件已保存到服务器');
+                    }
+                } else {
+                    const error = await response.json();
+                    console.error('文件上传失败:', error);
+                    alert(`文件上传失败: ${error.error}`);
+                }
+            } catch (error) {
+                console.error('上传文件错误:', error);
+                alert('上传文件时发生错误');
+            }
+        }
+        
+        // 添加文件消息（修改后的版本）
+        function addFileMessage(file, messageData = null) {
+            const chatMessages = document.getElementById('chatMessages');
+            
+            const fileMessage = document.createElement('div');
+            fileMessage.className = 'message file-message';
+            
+            const fileInfo = messageData ? messageData.file_info : {
+                original_name: file.name,
+                size: file.size
+            };
+            
+            fileMessage.innerHTML = `
+                <div class="message-avatar">📄</div>
+                <div class="message-content">
+                    <div class="message-sender">我</div>
+                    <div class="file-item">
+                        <div class="file-icon">${getFileIcon(file.type)}</div>
+                        <div class="file-info">
+                            <div class="file-name">${fileInfo.original_name}</div>
+                            <div class="file-size">${formatFileSize(fileInfo.size)}</div>
+                            ${messageData ? `
+                            <button class="download-btn" onclick="downloadFile('${fileInfo.saved_name}', '${messageData.receiver_id}')">
+                                下载文件
+                            </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div class="message-time">${messageData ? '已发送' : '已选择'}</div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(fileMessage);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // 下载文件
+        async function downloadFile(filename, userId) {
+            try {
+                const downloadUrl = `/api/download-file/${filename}?user_id=${userId}`;
+                window.open(downloadUrl, '_blank');
+            } catch (error) {
+                console.error('下载文件错误:', error);
+                alert('下载文件时发生错误');
+            }
+        }
+        
+        // 发送消息功能
+        const sendBtn = document.querySelector('.send-btn');
+        const messageInput = document.querySelector('.message-input');
+        
+        sendBtn.addEventListener('click', async function() {
+            const message = messageInput.value.trim();
+            if (message) {
+                await sendTextMessage(message);
+                messageInput.value = '';
+            }
+        });
+        
+        // 发送文本消息
+        async function sendTextMessage(content) {
+            const selectedUser = document.querySelector('.online-user.selected');
+            if (!selectedUser) {
+                alert('请先选择一个用户');
+                return;
+            }
+            
+            const targetId = selectedUser.dataset.userId;
+            
+            try {
+                const response = await fetch('/api/send-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        target_id: targetId,
+                        content: content
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('消息发送成功:', result);
+                    
+                    // 在聊天界面显示消息
+                    addTextMessage(content, true, null, new Date().toISOString());
+                    
+                    // 如果是发送给自己，显示服务器保存提示
+                    const currentUserId = sessionStorage.getItem('user_id');
+                    if (targetId === currentUserId) {
+                        addSystemMessage('消息已保存到服务器');
+                    }
+                } else {
+                    console.error('消息发送失败');
+                    alert('消息发送失败');
+                }
+            } catch (error) {
+                console.error('发送消息错误:', error);
+                alert('发送消息时发生错误');
+            }
+        }
+        
+        // 添加系统消息
+        function addSystemMessage(text) {
+            const chatMessages = document.getElementById('chatMessages');
+            
+            const systemMessage = document.createElement('div');
+            systemMessage.className = 'message system-message';
+            systemMessage.innerHTML = `
+                <div class="message-content">
+                    <div class="message-text">${text}</div>
+                    <div class="message-time">系统提示</div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(systemMessage);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // 回车发送消息
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendBtn.click();
+            }
+        });
+        
+        // 辅助函数
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
+        }
+        
+        function getFileIcon(fileType) {
+            const icons = {
+                'image/': '🖼️',
+                'video/': '🎬',
+                'audio/': '🎵',
+                'text/': '📝',
+                'application/pdf': '📄',
+                'application/zip': '📦',
+                'default': '📁'
+            };
+            
+            for (const [key, icon] of Object.entries(icons)) {
+                if (fileType.startsWith(key)) return icon;
+            }
+            return icons.default;
+        }
+    </script>
+</body>
+</html>
