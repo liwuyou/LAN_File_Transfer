@@ -484,54 +484,20 @@
             scrollToBottom();
         }
 
-        // 自动滚动到底部（修正：滚动正确的容器）
+        // 自动滚动到底部
         function scrollToBottom() {
-            console.log('🔄 滚动函数被调用');
             const chatContainer = document.querySelector('.chat-container');
             
             if (!chatContainer) {
-                console.error('❌ 找不到聊天容器元素');
                 return;
             }
             
-            console.log('📊 当前滚动位置:', chatContainer.scrollTop);
-            console.log('📊 最大滚动高度:', chatContainer.scrollHeight);
-            console.log('📊 客户端高度:', chatContainer.clientHeight);
-            console.log('📊 是否可以滚动:', chatContainer.scrollHeight > chatContainer.clientHeight);
-            
             setTimeout(() => {
-                console.log('⬇️ 执行滚动操作');
-                
-                // 滚动正确的容器
-                const targetScrollTop = chatContainer.scrollHeight;
-                chatContainer.scrollTop = targetScrollTop;
-                
-                // 验证滚动结果
-                setTimeout(() => {
-                    console.log('🔍 验证滚动结果:', chatContainer.scrollTop, '/', targetScrollTop);
-                    console.log('🔍 滚动是否成功:', chatContainer.scrollTop === targetScrollTop);
-                    
-                    if (chatContainer.scrollTop !== targetScrollTop) {
-                        console.log('⚠️ 滚动失败，尝试备用方法');
-                        chatContainer.scrollTo({
-                            top: targetScrollTop,
-                            behavior: 'auto'
-                        });
-                    }
-                }, 50);
+                // 滚动到最底部
+                chatContainer.scrollTop = chatContainer.scrollHeight;
             }, 100);
         }
         
-        // 滚动验证函数
-        function validateScroll() {
-            const chatMessages = document.getElementById('chatMessages');
-            console.log('🔍 滚动验证:');
-            console.log('scrollTop:', chatMessages.scrollTop);
-            console.log('scrollHeight:', chatMessages.scrollHeight);
-            console.log('clientHeight:', chatMessages.clientHeight);
-            console.log('是否可以滚动:', chatMessages.scrollHeight > chatMessages.clientHeight);
-            console.log('滚动位置百分比:', (chatMessages.scrollTop / (chatMessages.scrollHeight - chatMessages.clientHeight)) * 100 + '%');
-        }
         
         // 单独的状态更新函数
         async function updateDeviceStatus() {
