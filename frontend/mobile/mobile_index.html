@@ -60,7 +60,14 @@
                             <div class="message-time">刚刚</div>
                         </div>
                     </div>
-                    
+
+                    <div class="message system-message">
+                        <div class="message-content">
+                            <div class="message-text">左侧栏点击刷新后，可以选择对应的用户，要在一个局域网下</div>
+                            <div class="message-time">刚刚</div>
+                        </div>
+                    </div>
+
                     <div class="message received-message">
                         <div class="message-avatar">A</div>
                         <div class="message-content">
@@ -113,6 +120,34 @@
         // 这里将添加JavaScript交互逻辑
         console.log("移动端界面已加载");
         
+        // 头像库定义
+        const avatarLibrary = [
+            // 人物头像
+            '🧑', '🧒', '👶', '👴', '👵', '🧕', '🤵', '👰', '👳',
+            '👨', '👩', '👨‍🎓', '👩‍🎓', '👨‍💼', '👩‍💼', '👨‍🔧', '👩‍🔧',
+            '👨‍🍳', '👩‍🍳', '👨‍🚀', '👩‍🚀', '👨‍⚕️', '👩‍⚕️', '👨‍🌾', '👩‍🌾',
+            
+            // 动物头像
+            '🐵', '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨',
+            '🐯', '🦁', '🐔', '🐧', '🐸', '🐠', '🐙', '🦉', '🦄', '🐦',
+            
+            // 奇幻头像
+            '👻', '👽', '🤖', '💀', '😈', '👾', '🦹', '🦸', '🧙', '🧝',
+            
+            // 物品头像
+            '🎭', '🌞', '🌚', '🍎', '⚽', '🏀', '🎮', '🎸', '📱', '💻'
+        ];
+        
+        // 基于用户ID获取确定性头像
+        function getAvatarByUserId(userId) {
+            if (!userId) return '👤'; // 默认头像
+            
+            // 将用户ID转换为数字并取模
+            const numericId = parseInt(userId.toString().replace(/\D/g, '')) || 0;
+            const index = numericId % avatarLibrary.length;
+            return avatarLibrary[index];
+        }
+        
         // 加载用户信息
         async function loadUserInfo() {
             try {
@@ -140,10 +175,9 @@
                 userNameElement.textContent = userData.username;
             }
             
-            // 可以根据需要添加头像显示逻辑
-            if (userAvatarElement && userData.avatar) {
-                // 这里可以设置用户头像
-                userAvatarElement.textContent = '👤'; // 默认头像
+            // 设置基于用户ID的确定性头像
+            if (userAvatarElement && userData.user_id) {
+                userAvatarElement.textContent = getAvatarByUserId(userData.user_id);
             }
         }
         
@@ -268,10 +302,10 @@
                 
                 // 判断是否是当前设备
                 const displayName = (user.user_id.toString() === currentUserId) ? '本设备' : user.username;
-                const avatarChar = (user.user_id.toString() === currentUserId) ? '本' : user.username.charAt(0);
+                const userAvatar = getAvatarByUserId(user.user_id);
                 
                 userElement.innerHTML = `
-                    <div class="user-avatar-small">${avatarChar}</div>
+                    <div class="user-avatar-small">${userAvatar}</div>
                     <div class="user-name-small">${displayName}</div>
                 `;
                 onlineUsersContainer.appendChild(userElement);
@@ -467,11 +501,11 @@
                         <div class="message-text">${text}</div>
                         <div class="message-time">${displayTime}</div>
                     </div>
-                    <div class="message-avatar">我</div>
+                    <div class="message-avatar">${getAvatarByUserId(sessionStorage.getItem('user_id'))}</div>
                 `;
             } else {
                 textMessage.innerHTML = `
-                    <div class="message-avatar">${senderId ? senderId.toString().charAt(0) : '?'}</div>
+                    <div class="message-avatar">${getAvatarByUserId(senderId)}</div>
                     <div class="message-content">
                         <div class="message-sender">${senderName}</div>
                         <div class="message-text">${text}</div>
