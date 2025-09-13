@@ -68,14 +68,45 @@ user_manager = UserManager()
 
 @app.before_request
 def check_user_session():
-    """检查用户会话，如果没有则创建新用户"""
-    if 'user_id' not in session:
-        # 新用户注册
-        user_data = user_manager.create_user(request)
-        session['user_id'] = user_data['user_id']
-        session['username'] = user_data['username']
-        session['avatar'] = user_data['avatar']
-        print(f"新用户注册: {user_data['username']} (ID: {user_data['user_id']})")
+    uid = session.get('user_id')
+    if uid:
+        user_file = os.path.join(USERS_DIR, f'{uid}.json')
+        if os.path.exists(user_file):          # 文件在 → 正常
+            return
+        # 文件不在 → 尝试“复活”该 ID
+        if _try_recover_user(uid, request):    # 重建成功
+            return
+        # 复活失败（ID 已被占用）→ 把会话清掉，重新注册
+        session.clear()
+
+    # 标准新用户流程
+    user_data = user_manager.create_user(request)
+    session.update(user_id  = user_data['user_id'],
+                   username = user_data['username'],
+                   avatar   = user_data['avatar'])
+    print(f"注册新用户: {user_data['username']} (ID: {user_data['user_id']})")
+
+
+def _try_recover_user(uid: int, request) -> bool:
+    """
+    试图用旧 uid 重建用户文件；若 uid 已被占用则返回 False
+    """
+    user_file = os.path.join(USERS_DIR, f'{uid}.json')
+    if os.path.exists(user_file):          # 被别人占了
+        return False
+
+    user_data = {
+        'user_id':   uid,
+        'username':  f'用户{uid}',
+        'avatar':    'default',
+        'created_at': datetime.now().isoformat(),
+        'last_seen': datetime.now().isoformat(),
+        'ip_address': request.remote_addr or 'unknown'
+    }
+    with open(user_file, 'w', encoding='utf-8') as f:
+        json.dump(user_data, f, ensure_ascii=False, indent=2)
+    print(f"用户 {uid} 已复活")
+    return True
 
 def is_mobile_device(user_agent):
     """
