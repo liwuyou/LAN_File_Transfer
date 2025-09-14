@@ -11,6 +11,12 @@ E-mail: liwuyou66@qq.com
 需要安装python3.7及以上版本
 安装依赖库requirements.txt
 
+开箱即用版本下载（不python，不装库，开箱即用）
+https://wwqn.lanzoul.com/i1HNb366v30f
+
+操作教程视频
+
+
 ## 🏗️ 项目结构
 
 ```
