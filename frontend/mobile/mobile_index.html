@@ -800,6 +800,77 @@
                 sendBtn.click();
             }
         });
+
+        // 拖拽上传功能
+        const chatContainer = document.querySelector('.chat-container');
+        
+        // 添加拖拽事件监听
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            chatContainer.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        // 拖拽区域高亮效果
+        ['dragenter', 'dragover'].forEach(eventName => {
+            chatContainer.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            chatContainer.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            chatContainer.classList.add('dragging');
+        }
+        
+        function unhighlight() {
+            chatContainer.classList.remove('dragging');
+        }
+        
+        // 处理文件拖放
+        chatContainer.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                // 显示拖拽上传提示
+                addSystemMessage(`拖拽了 ${files.length} 个文件，开始上传...`);
+                
+                // 处理所有拖拽的文件
+                handleDroppedFiles(files);
+            }
+        }
+        
+        // 处理拖拽的文件
+        async function handleDroppedFiles(files) {
+            const fileArray = Array.from(files);
+            
+            // 显示简单的加载提示
+            const fileBtn = document.querySelector('.file-btn');
+            const originalText = fileBtn.textContent;
+            fileBtn.textContent = '上传中...';
+            fileBtn.disabled = true;
+            
+            for (const file of fileArray) {
+                try {
+                    console.log('拖拽文件:', file.name, formatFileSize(file.size));
+                    await uploadFile(file);
+                } catch (error) {
+                    console.error('文件处理失败:', error);
+                    addSystemMessage(`文件 ${file.name} 处理失败`);
+                }
+            }
+            
+            // 恢复按钮状态
+            fileBtn.textContent = originalText;
+            fileBtn.disabled = false;
+        }
         
         // 辅助函数
         function formatFileSize(bytes) {
@@ -821,7 +892,7 @@
                 'default': '📁'
             };
             
-            for (const [key, icon] of Object.entries(icons)) {
+            for (const [[key, icon]] of Object.entries(icons)) {
                 if (fileType.startsWith(key)) return icon;
             }
             return icons.default;
