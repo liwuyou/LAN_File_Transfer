@@ -192,10 +192,10 @@ def save_message(user_id, message_data):
         with open(messages_file, 'w', encoding='utf-8') as f:
             json.dump(messages, f, ensure_ascii=False, indent=2)
         
-        print(f"💾 消息保存成功 - 用户: {user_id}, 消息ID: {message_data['message_id']}")
+        print(f" 消息保存成功 - 用户: {user_id}, 消息ID: {message_data['message_id']}")
         return True
     except Exception as e:
-        print(f"❌ 消息保存失败 - 用户: {user_id}, 错误: {e}")
+        print(f" 消息保存失败 - 用户: {user_id}, 错误: {e}")
         return False
 
 def update_message_in_file(user_id, updated_message):
@@ -219,10 +219,10 @@ def update_message_in_file(user_id, updated_message):
             json.dump(messages, f, ensure_ascii=False, indent=2)
             f.truncate()
         
-        print(f"🔄 消息更新成功 - 用户: {user_id}, 消息ID: {updated_message['message_id']}")
+        print(f" 消息更新成功 - 用户: {user_id}, 消息ID: {updated_message['message_id']}")
         return True
     except Exception as e:
-        print(f"❌ 消息更新失败 - 用户: {user_id}, 错误: {e}")
+        print(f" 消息更新失败 - 用户: {user_id}, 错误: {e}")
         return False
 
 def load_user_messages(user_id):
@@ -293,7 +293,7 @@ def check_new_messages(target_id):
     # 获取最后一条消息的时间戳（如果有的话）
     last_timestamp = request.args.get('last_timestamp')
     
-    print(f"🔍 检查新消息 - 用户: {user_id}, 目标: {target_id}, 最后时间戳: {last_timestamp}")
+    print(f" 检查新消息 - 用户: {user_id}, 目标: {target_id}, 最后时间戳: {last_timestamp}")
     
     # 过滤出与目标用户的对话
     conversation = [
@@ -312,7 +312,7 @@ def check_new_messages(target_id):
         msg['is_polled'] = True
         update_message_in_file(user_id, msg)
     
-    print(f"📨 发现 {len(new_messages)} 条新消息")
+    print(f" 发现 {len(new_messages)} 条新消息")
     return jsonify(new_messages)
 
 @app.route('/api/send-file', methods=['POST'])

@@ -14,6 +14,8 @@ E-mail: liwuyou66@qq.com
 LAN_File_Transfer/
 ├── backend/                 # Python后端
 │   ├── app.py              # Flask主应用
+│   ├── tk_server_gui.py.py  # 启动主文件
+│   ├── config.json          # 启动主文件配置文件 
 │   └── requirements.txt    # Python依赖
 ├── frontend/               # 前端文件
 │   ├── pc_index.html       # PC端界面

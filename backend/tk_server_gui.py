@@ -91,7 +91,7 @@ class FlaskServerTk(tk.Tk):
         self.log("正在启动 Flask 服务器…")
 
         if self.clear_var.get():
-            data_dir = Path("data")
+            data_dir = Path("../data")
             if data_dir.exists():
                 import shutil
                 shutil.rmtree(data_dir)
