@@ -8,6 +8,9 @@ E-mail: liwuyou66@qq.com
 ---
 一个基于Web的局域网文件传输系统，支持PC和移动端设备之间的文件传输和消息通信。
 
+需要安装python3.7及以上版本
+安装依赖库requirements.txt
+
 ## 🏗️ 项目结构
 
 ```
